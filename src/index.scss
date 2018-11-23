@@ -1,0 +1,45 @@
+body {
+  font-family: sans-serif;
+}
+
+#container {
+  position: relative;
+  margin: 0 auto;
+  width: 90vw;
+  min-height: 80vh;
+  background: lightskyblue;
+  overflow: hidden;
+  box-sizing: border-box;
+  border: 1px solid blue;
+  border-radius: .25rem;
+}
+
+#container > * {
+  position: absolute;
+  margin: 0;
+  text-align: center;
+  line-height: 200px;
+  box-sizing: border-box;
+  border: 1px solid blue;
+  background: rgba(255,255,255,.5);
+  font-size: 4rem;
+  border-radius: .5rem;
+  color: blue;
+
+  &:before {
+    content: attr(data-slot-id);
+    position: absolute;
+    top: 0; left: 0;
+    font-size: 1rem;
+    line-height: 1rem;
+    padding: .5rem;
+  }
+
+  &:hover {
+    background: rgba(255,255,255);
+  }
+}
+
+div[data-slot-edge=true] {
+  background: lightgreen !important;
+}
