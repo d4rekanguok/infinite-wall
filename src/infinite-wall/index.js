@@ -10,11 +10,6 @@ export default class {
 
     this.wallBounding = $wall.getBoundingClientRect();
     const wallBounding = this.wallBounding;
-    // this.observer = new IntersectionObserver(this.intersectionHandler, {
-    //   root: $wall,
-    //   rootMargin: `0px`,
-    //   threshold: 1.0
-    // });
 
     // configuration
     this.slotSize = { 
@@ -84,27 +79,20 @@ export default class {
     const { x:rootX, y:rootY } = this.contentRootPos;
     const { w:slotW, h:slotH } = this.slotSize;
     const { gap } = this.gridSize;
-    const { row, col } = this.getSlotGridPos(i);
 
-    let _col = col;
-    let _row = row;
+    let col = parseInt($slot.getAttribute('data-slot-col'), 10);
+    let row = parseInt($slot.getAttribute('data-slot-row'), 10);
     // amount of slot that'll fit into the distance between rootX and this slot
     const slotHorizontalDistance = (Math.ceil(rootX / (slotW + gap)) + col);
-    if (slotHorizontalDistance >= slotCols) _col = col - slotCols;
-    if (slotHorizontalDistance < 0) _col =  col + slotCols;
+    if (slotHorizontalDistance >= slotCols) col = col - slotCols;
+    if (slotHorizontalDistance < 0) col =  col + slotCols;
 
     const slotVerticalDistance = (Math.ceil(rootY / (slotH + gap)) + row);
-    if (slotVerticalDistance >= slotRows) _row = row - slotRows;
-    if (slotVerticalDistance < 0) _row =  row + slotRows;
+    if (slotVerticalDistance >= slotRows) row = row - slotRows;
+    if (slotVerticalDistance < 0) row = row + slotRows;
 
-    const slotX = rootX + (_col * (slotW + gap));
-    const slotY = rootY + (_row * (slotH + gap)); 
-
-    $slot.setAttribute('data-slot-row', row);
-    $slot.setAttribute('data-slot-col', col);
-
-    // const isEdge = (row === 0 || col === 0 || row === slotRows -1 || col === slotCols -1);
-    // $slot.setAttribute('data-slot-edge', isEdge);
+    const slotX = rootX + (col * (slotW + gap));
+    const slotY = rootY + (row * (slotH + gap)); 
 
     $slot.style = `transform: translate(${slotX}px, ${slotY}px);`;
   }
@@ -151,8 +139,13 @@ export default class {
 
     for (let i = 0; i < slotAmount; i++) {
       const $slot = document.createElement('div');
+      const { row, col } = this.getSlotGridPos(i);
+
       $slot.classList.add(`slot`, `slot-${i}`);
+
       $slot.setAttribute('data-slot-id', i);
+      $slot.setAttribute('data-slot-row', row);
+      $slot.setAttribute('data-slot-col', col);
 
       this.updateSlotPosition($slot, i);
 
@@ -162,12 +155,6 @@ export default class {
       this.$slots.push($slot);
     }
   }
-
-  // intersectionHandler (entries) {
-  //   entries.forEach(entry => {
-  //     console.log(`slot ${entry.target.getAttribute('data-slot-id')} is${entry.isIntersecting ? '' : ' not'} intersecting`);
-  //   })
-  // }
 
   renderDataToSlot () {
     
