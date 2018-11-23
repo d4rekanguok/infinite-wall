@@ -24,6 +24,9 @@ export default class {
       y: -this.slotSize.h * this.gridSize.offsetY,
     };
     const contentRootPos = this.contentRootPos;
+    
+    this.slotRootPos = {...contentRootPos};
+    const slotRootPos = this.slotRootPos;
 
     // slot configs
     this.slotConfig = this.getSlotAmount();
@@ -41,10 +44,13 @@ export default class {
     hammer.on('panmove', (e) => {
       const { x, y } = e.center;
 
+      console.log(slotRootPos.x, contentRootPos.x);
       // looping rootPos
       const { slotTotalWidth, slotTotalHeight } = this.slotConfig;
-      contentRootPos.y = (y - deltaY) % slotTotalHeight;
-      contentRootPos.x = (x - deltaX) % slotTotalWidth;
+      contentRootPos.y = y - deltaY;
+      contentRootPos.x = x - deltaX;
+      slotRootPos.y = (y - deltaY) % slotTotalHeight;
+      slotRootPos.x = (x - deltaX) % slotTotalWidth;
 
       this.$slots.forEach(($slot, i) =>{
         this.updateSlotPosition($slot, i);
@@ -76,7 +82,7 @@ export default class {
 
   updateSlotPosition ($slot, i) {
     const { slotCols, slotRows } = this.slotConfig;
-    const { x:rootX, y:rootY } = this.contentRootPos;
+    const { x:rootX, y:rootY } = this.slotRootPos;
     const { w:slotW, h:slotH } = this.slotSize;
     const { gap } = this.gridSize;
 
