@@ -1,25 +1,20 @@
 import Hammer from 'hammerjs';
 
-class Slot {
-  constructor () {
-
-  }
-}
-
 export default class {
   constructor($wall) {
     this.$wall = $wall;
     this.$slots = [];
 
-    const hammer = new Hammer($wall);
+    const hammer = new Hammer.Manager($wall);
+    hammer.add(new Hammer.Pan({ direction: Hammer.DIRECTION_ALL, threshold: 0 }));
 
     this.wallBounding = $wall.getBoundingClientRect();
     const wallBounding = this.wallBounding;
-    this.observer = new IntersectionObserver(this.intersectionHandler, {
-      root: $wall,
-      rootMargin: `0px`,
-      threshold: 1.0
-    });
+    // this.observer = new IntersectionObserver(this.intersectionHandler, {
+    //   root: $wall,
+    //   rootMargin: `0px`,
+    //   threshold: 1.0
+    // });
 
     // configuration
     this.slotSize = { 
@@ -50,8 +45,11 @@ export default class {
 
     hammer.on('panmove', (e) => {
       const { x, y } = e.center;
-      contentRootPos.y = y - deltaY;
-      contentRootPos.x = x - deltaX;
+
+      // looping rootPos
+      const { slotTotalWidth, slotTotalHeight } = this.slotConfig;
+      contentRootPos.y = (y - deltaY) % slotTotalHeight;
+      contentRootPos.x = (x - deltaX) % slotTotalWidth;
 
       this.$slots.forEach(($slot, i) =>{
         this.updateSlotPosition($slot, i);
@@ -87,14 +85,26 @@ export default class {
     const { w:slotW, h:slotH } = this.slotSize;
     const { gap } = this.gridSize;
     const { row, col } = this.getSlotGridPos(i);
-    const slotX = rootX + (col * (slotW + gap));
-    const slotY = rootY + (row * (slotH + gap)); 
+
+    let _col = col;
+    let _row = row;
+    // amount of slot that'll fit into the distance between rootX and this slot
+    const slotHorizontalDistance = (Math.ceil(rootX / (slotW + gap)) + col);
+    if (slotHorizontalDistance >= slotCols) _col = col - slotCols;
+    if (slotHorizontalDistance < 0) _col =  col + slotCols;
+
+    const slotVerticalDistance = (Math.ceil(rootY / (slotH + gap)) + row);
+    if (slotVerticalDistance >= slotRows) _row = row - slotRows;
+    if (slotVerticalDistance < 0) _row =  row + slotRows;
+
+    const slotX = rootX + (_col * (slotW + gap));
+    const slotY = rootY + (_row * (slotH + gap)); 
 
     $slot.setAttribute('data-slot-row', row);
     $slot.setAttribute('data-slot-col', col);
 
-    const isEdge = (row === 0 || col === 0 || row === slotRows-1 || col === slotCols-1);
-    $slot.setAttribute('data-slot-edge', isEdge);
+    // const isEdge = (row === 0 || col === 0 || row === slotRows -1 || col === slotCols -1);
+    // $slot.setAttribute('data-slot-edge', isEdge);
 
     $slot.style = `transform: translate(${slotX}px, ${slotY}px);`;
   }
@@ -108,10 +118,15 @@ export default class {
     const slotRows = Math.round(height / (slotH + gap)) + 1;
     const slotAmount = slotCols * slotRows;
 
+    const slotTotalWidth = (slotW + gap) * slotCols - gap;
+    const slotTotalHeight = (slotH + gap) * slotRows - gap;
+    
     return {
       slotCols,
       slotRows,
       slotAmount,
+      slotTotalWidth,
+      slotTotalHeight,
     }
   }
 
@@ -143,16 +158,16 @@ export default class {
 
       $slot.textContent = i;
       this.$wall.appendChild($slot);
-      this.observer.observe($slot);
+      // this.observer.observe($slot);
       this.$slots.push($slot);
     }
   }
 
-  intersectionHandler (entries) {
-    entries.forEach(entry => {
-      console.log(`slot ${entry.target.getAttribute('data-slot-id')} is${entry.isIntersecting ? '' : ' not'} intersecting`);
-    })
-  }
+  // intersectionHandler (entries) {
+  //   entries.forEach(entry => {
+  //     console.log(`slot ${entry.target.getAttribute('data-slot-id')} is${entry.isIntersecting ? '' : ' not'} intersecting`);
+  //   })
+  // }
 
   renderDataToSlot () {
     
