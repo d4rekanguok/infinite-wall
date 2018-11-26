@@ -6,6 +6,9 @@ export default class {
     this.$slots = [];
     this.slotLoop = { x: 0, y: 0 };
 
+    const dataLength = 69;
+    this.data = Array.from(Array(dataLength).keys());
+
     const hammer = new Hammer.Manager($wall);
     hammer.add(new Hammer.Pan({ direction: Hammer.DIRECTION_ALL, threshold: 0 }));
 
@@ -17,8 +20,7 @@ export default class {
       w: wallBounding.width / 4, 
       h: 200 };
 
-    this.gridSize = { cols: 5, rows: false, gap: 5, offsetX: .5, offsetY: .5 };
-    const dataLength = 100;
+    this.gridSize = { cols: 7, rows: false, gap: 5, offsetX: -.5, offsetY: -.5 };
 
     this.contentRootPos = { 
       x: -this.slotSize.w * this.gridSize.offsetX,
@@ -30,7 +32,8 @@ export default class {
     const slotRootPos = this.slotRootPos;
 
     // slot configs
-    this.slotConfig = this.getSlotAmount();
+    this.slotConfig = this.getSlotGridConfig();
+    this.contentConfig = this.getContentGridConfig();
 
     let deltaX = 0;
     let deltaY = 0;
@@ -45,24 +48,29 @@ export default class {
     hammer.on('panmove', (e) => {
       const { x, y } = e.center;
       const { slotTotalWidth, slotTotalHeight } = this.slotConfig;
+      const { contentTotalWidth, contentTotalHeight } = this.contentConfig;
 
       // total distance from original position
       const distanceY = y - deltaY;
       const distanceX = x - deltaX;
 
       // loop content
-      contentRootPos.y = distanceY;
-      contentRootPos.x = distanceX;
+      contentRootPos.y = distanceY % contentTotalHeight;
+      contentRootPos.x = distanceX % contentTotalWidth;
 
       // keep track of loop count so we can place correct data on slot
-      this.slotLoop.y = Math.ceil(distanceY / slotTotalHeight);
-      this.slotLoop.x = Math.ceil(distanceX / slotTotalWidth);
+      // since we're counting from the bottom right position (hence Math.ceil)
+      // if loop count > 0, remove 1 loop to make it seamless
+      this.slotLoop.y = -Math.ceil(distanceY / slotTotalHeight);
+      if (this.slotLoop.y < 0) this.slotLoop.y++;
+      this.slotLoop.x = -Math.ceil(distanceX / slotTotalWidth);
+      if (this.slotLoop.x < 0) this.slotLoop.x++;
 
       // loop slot
       slotRootPos.y = distanceY % slotTotalHeight;
       slotRootPos.x = distanceX % slotTotalWidth;
 
-      console.log(this.slotLoop);
+      console.log(contentRootPos);
 
       this.$slots.forEach(($slot, i) =>{
         this.updateSlotPosition($slot, i);
@@ -75,14 +83,15 @@ export default class {
       deltaY = 0;
     })
 
-    this.data = Array.from(Array(dataLength).keys());
     this.createSlots();
 
 
     this.getSlotGridPos = this.getSlotGridPos.bind(this);
     this.updateSlotPosition = this.updateSlotPosition.bind(this);
-    this.getSlotAmount = this.getSlotAmount.bind(this);
+    this.getSlotGridConfig = this.getSlotGridConfig.bind(this);
     this.createSlots = this.createSlots.bind(this);
+
+    this.getContentGridConfig = this.getContentGridConfig.bind(this);
     this.renderDataToSlot = this.renderDataToSlot.bind(this);
   }
 
@@ -95,6 +104,7 @@ export default class {
 
   updateSlotPosition ($slot, i) {
     const { slotCols, slotRows } = this.slotConfig;
+    const { contentCols, contentRows } = this.contentConfig;
     const { x:rootX, y:rootY } = this.slotRootPos;
     const { w:slotW, h:slotH } = this.slotSize;
     const { x:loopX, y:loopY } = this.slotLoop;
@@ -116,19 +126,20 @@ export default class {
     const slotX = rootX + (col * (slotW + gap));
     const slotY = rootY + (row * (slotH + gap)); 
 
-    contentCol = col + (-loopX * slotCols);
-    contentRow = row + (-loopY * slotRows);
-
-    $slot.setAttribute('data-content-row', row);
-    $slot.setAttribute('data-content-col', col);
-
     $slot.style = `transform: translate(${slotX}px, ${slotY}px);`;
 
-    // $slot.textContent = this.renderDataToSlot(i);
-    $slot.textContent = `${contentCol}x${contentRow}`;
+    // Content
+    contentCol = (col + (loopX * slotCols)) % contentCols;
+    contentRow = (row + (loopY * slotRows)) % contentRows;
+
+    $slot.setAttribute('data-content-row', contentCol);
+    $slot.setAttribute('data-content-col', contentRow);
+    
+    const contentId = contentRow * contentCols + contentCol;
+    $slot.textContent = this.renderDataToSlot(contentId);
   }
 
-  getSlotAmount () {
+  getSlotGridConfig () {
     const { width, height } = this.wallBounding;
     const { w:slotW, h:slotH } = this.slotSize;
     const { gap } = this.gridSize;
@@ -146,6 +157,22 @@ export default class {
       slotAmount,
       slotTotalWidth,
       slotTotalHeight,
+    }
+  }
+
+  getContentGridConfig () {
+    const { gap, cols:contentCols } = this.gridSize;
+    const { w:slotW, h:slotH } = this.slotSize;
+    const contentRows = Math.ceil(this.data.length / contentCols);
+
+    const contentTotalWidth = (slotW + gap) * contentCols;
+    const contentTotalHeight = (slotH + gap) * contentRows;
+
+    return {
+      contentCols,
+      contentRows,
+      contentTotalWidth,
+      contentTotalHeight,
     }
   }
 
@@ -186,6 +213,11 @@ export default class {
   }
 
   renderDataToSlot (i) {
+    // this is not accounting for the empty slot,
+    // which is why the top of the scroll doesn't loop.
+    // But it makes the wall more seamless
+    if (i < 0) i = i + this.data.length;
+    if (i > this.data.length) return null;
     return this.data[i];
   }
 }
