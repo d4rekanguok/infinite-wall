@@ -4,6 +4,7 @@ export default class {
   constructor($wall) {
     this.$wall = $wall;
     this.$slots = [];
+    this.slotLoop = { x: 0, y: 0 };
 
     const hammer = new Hammer.Manager($wall);
     hammer.add(new Hammer.Pan({ direction: Hammer.DIRECTION_ALL, threshold: 0 }));
@@ -43,14 +44,25 @@ export default class {
 
     hammer.on('panmove', (e) => {
       const { x, y } = e.center;
-
-      console.log(slotRootPos.x, contentRootPos.x);
-      // looping rootPos
       const { slotTotalWidth, slotTotalHeight } = this.slotConfig;
-      contentRootPos.y = y - deltaY;
-      contentRootPos.x = x - deltaX;
-      slotRootPos.y = (y - deltaY) % slotTotalHeight;
-      slotRootPos.x = (x - deltaX) % slotTotalWidth;
+
+      // total distance from original position
+      const distanceY = y - deltaY;
+      const distanceX = x - deltaX;
+
+      // loop content
+      contentRootPos.y = distanceY;
+      contentRootPos.x = distanceX;
+
+      // keep track of loop count so we can place correct data on slot
+      this.slotLoop.y = Math.ceil(distanceY / slotTotalHeight);
+      this.slotLoop.x = Math.ceil(distanceX / slotTotalWidth);
+
+      // loop slot
+      slotRootPos.y = distanceY % slotTotalHeight;
+      slotRootPos.x = distanceX % slotTotalWidth;
+
+      console.log(this.slotLoop);
 
       this.$slots.forEach(($slot, i) =>{
         this.updateSlotPosition($slot, i);
@@ -63,7 +75,7 @@ export default class {
       deltaY = 0;
     })
 
-    const data = Array.from(Array(dataLength).keys());
+    this.data = Array.from(Array(dataLength).keys());
     this.createSlots();
 
 
@@ -71,6 +83,7 @@ export default class {
     this.updateSlotPosition = this.updateSlotPosition.bind(this);
     this.getSlotAmount = this.getSlotAmount.bind(this);
     this.createSlots = this.createSlots.bind(this);
+    this.renderDataToSlot = this.renderDataToSlot.bind(this);
   }
 
   getSlotGridPos (i = 0) {
@@ -84,11 +97,14 @@ export default class {
     const { slotCols, slotRows } = this.slotConfig;
     const { x:rootX, y:rootY } = this.slotRootPos;
     const { w:slotW, h:slotH } = this.slotSize;
+    const { x:loopX, y:loopY } = this.slotLoop;
     const { gap } = this.gridSize;
 
+    let contentCol, contentRow;
     let col = parseInt($slot.getAttribute('data-slot-col'), 10);
     let row = parseInt($slot.getAttribute('data-slot-row'), 10);
     // amount of slot that'll fit into the distance between rootX and this slot
+    // basically, if slot's not in view -> move it to the other side of the grid
     const slotHorizontalDistance = (Math.ceil(rootX / (slotW + gap)) + col);
     if (slotHorizontalDistance >= slotCols) col = col - slotCols;
     if (slotHorizontalDistance < 0) col =  col + slotCols;
@@ -100,7 +116,16 @@ export default class {
     const slotX = rootX + (col * (slotW + gap));
     const slotY = rootY + (row * (slotH + gap)); 
 
+    contentCol = col + (-loopX * slotCols);
+    contentRow = row + (-loopY * slotRows);
+
+    $slot.setAttribute('data-content-row', row);
+    $slot.setAttribute('data-content-col', col);
+
     $slot.style = `transform: translate(${slotX}px, ${slotY}px);`;
+
+    // $slot.textContent = this.renderDataToSlot(i);
+    $slot.textContent = `${contentCol}x${contentRow}`;
   }
 
   getSlotAmount () {
@@ -112,8 +137,8 @@ export default class {
     const slotRows = Math.round(height / (slotH + gap)) + 1;
     const slotAmount = slotCols * slotRows;
 
-    const slotTotalWidth = (slotW + gap) * slotCols - gap;
-    const slotTotalHeight = (slotH + gap) * slotRows - gap;
+    const slotTotalWidth = (slotW + gap) * slotCols;
+    const slotTotalHeight = (slotH + gap) * slotRows;
     
     return {
       slotCols,
@@ -154,15 +179,13 @@ export default class {
       $slot.setAttribute('data-slot-col', col);
 
       this.updateSlotPosition($slot, i);
-
-      $slot.textContent = i;
       this.$wall.appendChild($slot);
       // this.observer.observe($slot);
       this.$slots.push($slot);
     }
   }
 
-  renderDataToSlot () {
-    
+  renderDataToSlot (i) {
+    return this.data[i];
   }
 }
