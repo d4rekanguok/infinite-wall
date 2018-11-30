@@ -10,7 +10,11 @@ export default class {
     this.data = Array.from(Array(dataLength).keys());
 
     const hammer = new Hammer.Manager($wall);
-    hammer.add(new Hammer.Pan({ direction: Hammer.DIRECTION_ALL, threshold: 0 }));
+    hammer.add(new Hammer.Pan({
+      // pointer: 2,
+      direction: Hammer.DIRECTION_ALL,
+      threshold: 0 
+    }));
 
     this.wallBounding = $wall.getBoundingClientRect();
     const wallBounding = this.wallBounding;
