@@ -45,6 +45,28 @@ export default class {
     let distanceX = 0;
     let distanceY = 0;
 
+    // mousewheel events
+    let timer = null;
+    this.$wall.onwheel = e => {
+      e.stopPropagation();
+
+      const { deltaX, deltaY } = e;
+      const { x, y } = this.contentRootPos;
+
+      // total distance from original position
+      const newRootPosY = y - deltaY;
+      const newRootPosX = x - deltaX;
+
+      this.updateRootPos({ x: newRootPosX, y: newRootPosY });
+      this.updateSlots();
+
+      // snap when scroll stops
+      clearTimeout(timer);
+      timer = setTimeout(() => {
+        this.snap({ duration: 100 });
+      }, 100);
+    }
+
     hammer.on("panstart", e => {
       console.log("panstart");
       const { x, y } = e.center;
@@ -66,27 +88,7 @@ export default class {
 
     hammer.on("panend", e => {
       console.log("panend");
-      const { snap, gap, w, h } = this.gridSize;
-
-      if (!snap) return;
-
-      const { x:rootPosX, y:rootPosY } = this.contentRootPos;
-      const snapY = h + gap;
-      const snapX = w + gap;
-      const offsetY = snapY / 2;
-      const offsetX = snapX / 2;
-      
-      const newPosY = snapY * Math.round((rootPosY - offsetY) / snapY) + offsetY;
-      const newPosX = snapX * Math.round((rootPosX - offsetX) / snapX) + offsetX;
-
-      //  5.3 => 5.0, 5.3 => 5.5
-      //  5.8 => 6.0, 5.8 => 5.5
-      //  6.1 => 6.0, 6.1 =>
- 
-      this.goToPos({
-        x: newPosX,
-        y: newPosY,
-      }, { duration: 150 })
+      this.snap();
     });
 
     this.createSlots();
@@ -116,6 +118,27 @@ export default class {
     slotRootPos.x = x % slotTotalWidth;
   }
 
+  snap(setting = { duration: 150 }) {
+    const { snap, gap, w, h } = this.gridSize;
+    const { duration } = setting;
+
+    if (!snap) return;
+
+    const { x:rootPosX, y:rootPosY } = this.contentRootPos;
+    const snapY = h + gap;
+    const snapX = w + gap;
+    const offsetY = snapY / 2;
+    const offsetX = snapX / 2;
+    
+    const newPosY = snapY * Math.round((rootPosY - offsetY) / snapY) + offsetY;
+    const newPosX = snapX * Math.round((rootPosX - offsetX) / snapX) + offsetX;
+
+    this.goToPos({
+      x: newPosX,
+      y: newPosY,
+    }, { duration });
+  }
+
   goToPos(toPos = {x: 0, y: 0}, setting = {
     duration: 0,
   }) {
@@ -137,7 +160,6 @@ export default class {
     function render (timestamp) {
       if (!start) start = timestamp;
       const delta = timestamp - start;
-      
       newPos.x = fromPos.x + (toPos.x - fromPos.x) / duration * delta;
       newPos.y = fromPos.y + (toPos.y - fromPos.y) / duration * delta;
 
