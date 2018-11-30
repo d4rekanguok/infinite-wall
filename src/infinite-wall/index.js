@@ -63,8 +63,42 @@ export default class {
       // snap when scroll stops
       clearTimeout(timer);
       timer = setTimeout(() => {
-        this.snap({ duration: 100 });
+        this.snap({ duration: 200 });
       }, 100);
+    }
+
+    // support keyboard arrows;
+    window.onkeydown = (e) => {
+      const { keyCode } = e; 
+      if (keyCode > 40 || keyCode < 37) return;
+
+      const { x, y } = this.contentRootPos;
+      const { gap, w, h } = this.gridSize;
+      
+      let newRootPosX = x;
+      let newRootPosY = y;
+      
+      switch(keyCode) {
+        case 40: 
+          // key: arrowDown;
+          newRootPosY += (gap + h);
+          break;
+        case 39: 
+          // key: arrowRight;
+          newRootPosX += (gap + w);
+          break;
+        case 38: 
+          // key: arrowUp;
+          newRootPosY -= (gap + h);
+          break;
+        case 37: 
+          // key: arrowLeft;
+          newRootPosX -= (gap + w);
+          break;
+        default:
+      }
+
+      this.goToPos({ x: newRootPosX, y: newRootPosY }, { duration: 150 });
     }
 
     hammer.on("panstart", e => {
@@ -120,7 +154,6 @@ export default class {
 
   snap(setting = { duration: 150 }) {
     const { snap, gap, w, h } = this.gridSize;
-    const { duration } = setting;
 
     if (!snap) return;
 
@@ -136,7 +169,7 @@ export default class {
     this.goToPos({
       x: newPosX,
       y: newPosY,
-    }, { duration });
+    }, setting);
   }
 
   goToPos(toPos = {x: 0, y: 0}, setting = {
