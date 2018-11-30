@@ -149,51 +149,48 @@ export default class {
     return { row, col };
   }
 
-  getSlotPosFromGridPos(col, row) {
+  getSlotPosFromGridPos(gridPos = {col:0, row:0}) {
     const { slotCols, slotRows } = this.slotConfig;
-    const { x: rootX, y: rootY } = this.slotRootPos;
-    const { w: slotW, h: slotH } = this.slotSize;
+    const { x:rootX, y:rootY } = this.slotRootPos;
+    const { w:slotW, h:slotH } = this.slotSize;
     const { gap } = this.gridSize;
 
+    let { col, row } = gridPos;
     // amount of slot that'll fit into the distance between rootX and this slot
     // basically, if slot's not in view -> move it to the other side of the grid
-    const slotHorizontalDistance = Math.ceil(rootX / (slotW + gap)) + col;
+    const slotHorizontalDistance = (Math.ceil(rootX / (slotW + gap)) + col);
     if (slotHorizontalDistance >= slotCols) col = col - slotCols;
-    if (slotHorizontalDistance < 0) col = col + slotCols;
+    if (slotHorizontalDistance < 0) col =  col + slotCols;
 
-    const slotVerticalDistance = Math.ceil(rootY / (slotH + gap)) + row;
+    const slotVerticalDistance = (Math.ceil(rootY / (slotH + gap)) + row);
     if (slotVerticalDistance >= slotRows) row = row - slotRows;
     if (slotVerticalDistance < 0) row = row + slotRows;
 
-    const slotX = rootX + col * (slotW + gap);
-    const slotY = rootY + row * (slotH + gap);
+    const slotX = rootX + (col * (slotW + gap));
+    const slotY = rootY + (row * (slotH + gap));
 
-    return {
-      slotX,
-      slotY,
-    }
+    return { slotY, slotX, col, row };
   }
 
-  updateSlotPosition($slot, i) {
+  updateSlotPosition ($slot) {
     const { slotCols, slotRows } = this.slotConfig;
     const { contentCols, contentRows } = this.contentConfig;
-    const { x: loopX, y: loopY } = this.slotLoop;
-
-    let col = parseInt($slot.getAttribute("data-slot-col"), 10);
-    let row = parseInt($slot.getAttribute("data-slot-row"), 10);
+    const { x:loopX, y:loopY } = this.slotLoop;
 
     let contentCol, contentRow;
+    const col = parseInt($slot.getAttribute('data-slot-col'), 10);
+    const row = parseInt($slot.getAttribute('data-slot-row'), 10);
+    const { slotX, slotY, col:newCol, row:newRow } = this.getSlotPosFromGridPos({ col, row });
 
-    const { slotX, slotY } = this.getSlotPosFromGridPos(col, row);
     $slot.style = `transform: translate(${slotX}px, ${slotY}px);`;
 
     // Content
-    contentCol = (col + loopX * slotCols) % contentCols;
-    contentRow = (row + loopY * slotRows) % contentRows;
+    contentCol = (newCol + (loopX * slotCols)) % contentCols;
+    contentRow = (newRow + (loopY * slotRows)) % contentRows;
 
-    $slot.setAttribute("data-content-row", contentCol);
-    $slot.setAttribute("data-content-col", contentRow);
-
+    $slot.setAttribute('data-content-row', contentCol);
+    $slot.setAttribute('data-content-col', contentRow);
+    
     const contentId = contentRow * contentCols + contentCol;
     $slot.textContent = this.renderDataToSlot(contentId);
   }
