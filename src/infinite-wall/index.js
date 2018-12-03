@@ -5,11 +5,8 @@ export default class {
     this.$wall = $wall;
     this.$slots = [];
 
-    const dataLength = 70;
+    const dataLength = 800;
     this.content = Array.from(Array(dataLength).keys());
-
-    const hammer = new Hammer.Manager($wall);
-    hammer.add( new Hammer.Pan({ direction: Hammer.DIRECTION_ALL, threshold: 0 }) );
 
     this.wallBounding = $wall.getBoundingClientRect();
     const wallBounding = this.wallBounding;
@@ -100,6 +97,9 @@ export default class {
 
       this.goToPos({ x: newRootPosX, y: newRootPosY }, { duration: 150 });
     }
+
+    const hammer = new Hammer.Manager($wall);
+    hammer.add( new Hammer.Pan({ direction: Hammer.DIRECTION_ALL, threshold: 0 }) );
 
     hammer.on("panstart", e => {
       console.log("panstart");
