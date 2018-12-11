@@ -11,13 +11,7 @@ export default class {
     this.wallBounding = $wall.getBoundingClientRect();
     const wallBounding = this.wallBounding;
 
-    // configuration
-    this.slotSize = {
-      w: wallBounding.width / 4,
-      h: 200
-    };
-
-    this.gridSize = {
+    this.gridConfig = {
       w: wallBounding.width / 4,
       h: 200,
       cols: 7,
@@ -26,11 +20,11 @@ export default class {
       snap: true,
     };
 
-    this.slotLoop = { x: 0, y: 0 };
+    this.loopCount = { x: 0, y: 0 };
     
     this.contentRootPos = {
-      x: -this.slotSize.w * -0.5,
-      y: -this.slotSize.h * -0.5,
+      x: -this.gridConfig.w * -0.5,
+      y: -this.gridConfig.h * -0.5,
     };
 
     this.slotRootPos = { ...this.contentRootPos };
@@ -70,7 +64,7 @@ export default class {
       if (keyCode > 40 || keyCode < 37) return;
 
       const { x, y } = this.contentRootPos;
-      const { gap, w, h } = this.gridSize;
+      const { gap, w, h } = this.gridConfig;
       
       let newRootPosX = x;
       let newRootPosY = y;
@@ -142,10 +136,10 @@ export default class {
     // keep track of loop count so we can place correct data on slot
     // since we're counting from the bottom right position (hence Math.ceil)
     // if loop count > 0, remove 1 loop to make it seamless
-    this.slotLoop.y = -Math.ceil(y / slotTotalHeight);
-    if (this.slotLoop.y < 0) this.slotLoop.y++;
-    this.slotLoop.x = -Math.ceil(x / slotTotalWidth);
-    if (this.slotLoop.x < 0) this.slotLoop.x++;
+    this.loopCount.y = -Math.ceil(y / slotTotalHeight);
+    if (this.loopCount.y < 0) this.loopCount.y++;
+    this.loopCount.x = -Math.ceil(x / slotTotalWidth);
+    if (this.loopCount.x < 0) this.loopCount.x++;
 
     // loop slot
     slotRootPos.y = y % slotTotalHeight;
@@ -153,7 +147,7 @@ export default class {
   }
 
   snap(setting = { duration: 150 }) {
-    const { snap, gap, w, h } = this.gridSize;
+    const { snap, gap, w, h } = this.gridConfig;
 
     if (!snap) return;
 
@@ -216,8 +210,8 @@ export default class {
   getSlotPosFromGridPos(gridPos = { col: 0, row: 0 }) {
     const { slotCols, slotRows } = this.slotConfig;
     const { x: rootX, y: rootY } = this.slotRootPos;
-    const { w: slotW, h: slotH } = this.slotSize;
-    const { gap } = this.gridSize;
+    const { w: slotW, h: slotH } = this.gridConfig;
+    const { gap } = this.gridConfig;
 
     let { col, row } = gridPos;
     // amount of slot that'll fit into the distance between rootX and this slot
@@ -258,8 +252,8 @@ export default class {
 
   getSlotGridConfig() {
     const { width, height } = this.wallBounding;
-    const { w: slotW, h: slotH } = this.slotSize;
-    const { gap } = this.gridSize;
+    const { w: slotW, h: slotH } = this.gridConfig;
+    const { gap } = this.gridConfig;
 
     const slotCols = Math.round(width / (slotW + gap)) + 1;
     const slotRows = Math.round(height / (slotH + gap)) + 1;
@@ -283,7 +277,7 @@ export default class {
       return;
     }
     const { slotAmount } = this.slotConfig;
-    const { w, h } = this.slotSize;
+    const { w, h } = this.gridConfig;
 
     const head = document.head;
     const css = document.createElement("style");
@@ -335,8 +329,8 @@ export default class {
   }
 
   getContentGridConfig() {
-    const { gap, cols: contentCols } = this.gridSize;
-    const { w: slotW, h: slotH } = this.slotSize;
+    const { gap, cols: contentCols } = this.gridConfig;
+    const { w: slotW, h: slotH } = this.gridConfig;
     const contentRows = Math.ceil(this.content.length / contentCols);
 
     const contentTotalWidth = (slotW + gap) * contentCols;
@@ -354,7 +348,7 @@ export default class {
     const { col, row } = slotGridPos;
     const { slotCols, slotRows } = this.slotConfig;
     const { contentCols, contentRows } = this.contentConfig;
-    const { x: loopX, y: loopY } = this.slotLoop;
+    const { x: loopX, y: loopY } = this.loopCount;
 
     let contentCol, contentRow;
 
