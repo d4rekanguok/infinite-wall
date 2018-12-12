@@ -210,8 +210,7 @@ export default class {
   getSlotPosFromGridPos(gridPos = { col: 0, row: 0 }) {
     const { slotCols, slotRows } = this.slotConfig;
     const { x: rootX, y: rootY } = this.slotRootPos;
-    const { w: slotW, h: slotH } = this.gridConfig;
-    const { gap } = this.gridConfig;
+    const { w: slotW, h: slotH, gap } = this.gridConfig;
 
     let { col, row } = gridPos;
     // amount of slot that'll fit into the distance between rootX and this slot

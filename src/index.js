@@ -12,10 +12,17 @@ const config = {
   height: 200,
   cols: 7,
   gap: 5,
-  snap: false,
+  snap: true,
+  contentSize: 100,
 }
 
-const Cell = ({ data, state }) => <div>{data}</div>
+const Cell = ({ data }) => (
+  <div style={{
+    color: 'blue',
+  }}>
+    {`${data.contentId}`}
+  </div>
+)
 
 const dataLength = 100;
 const content = Array.from(Array(dataLength).keys());
@@ -23,7 +30,6 @@ const content = Array.from(Array(dataLength).keys());
 const App = () => (
   <Infinite
     config={config}
-    content={content}
     render={
     /* state: loading, ready, position etc; data: data to render into component */
       (props) => <Cell {...props} />
