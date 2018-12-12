@@ -100,6 +100,7 @@ class Infinite extends React.PureComponent {
       y: -this.config.height * -0.5
     };
 
+    this.contentRootPos = { ...contentRootPos };
     this.slotRootPos = { ...contentRootPos };
 
     // slot configs
